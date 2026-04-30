@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparador de Precios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #4f46e5;
+            --surface: rgba(255, 255, 255, 0.85);
+            --border: rgba(226, 232, 240, 0.8);
+        }
+
+        body { 
+            font-family: 'Outfit', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,0.03) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.03) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,0.03) 0, transparent 50%);
+        }
+
+        /* Ambient Background */
+        .ambient-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2394a3b8' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .blob {
+            position: absolute;
+            filter: blur(90px);
+            opacity: 0.4;
+            animation: float 25s infinite ease-in-out alternate;
+            z-index: -1;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        /* Modern Glass UI */
+        .glass-panel {
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .product-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--card-color, #cbd5e1);
+            opacity: 0.8;
+            transition: height 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.1);
+        }
+
+        .product-card:hover::before {
+            height: 6px;
+        }
+
+        /* Inputs */
+        .input-group {
+            position: relative;
+            margin-top: 0.25rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            background-color: #f1f5f9;
+            border: 1px solid transparent;
+            border-radius: 1rem;
+            padding: 0.875rem 1rem 0.875rem 2.75rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #1e293b;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            background-color: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15), 0 4px 6px -1px rgba(0,0,0,0.05);
+            transform: translateY(-1px);
+        }
+
+        .input-group .icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            transition: all 0.3s ease;
+        }
+
+        .input-group:focus-within .icon {
+            color: var(--primary);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        /* Buttons */
+        .btn-magic {
+            background: linear-gradient(110deg, #4f46e5 0%, #6366f1 25%, #8b5cf6 50%, #6366f1 75%, #4f46e5 100%);
+            background-size: 200% auto;
+            color: white;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-magic:hover {
+            background-position: right center;
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-magic::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.6s ease-out;
+        }
+
+        .btn-magic:active::after {
+            opacity: 1;
+            transform: scale(1);
+            transition: 0s;
+        }
+
+        /* Animations */
+        .stagger-1 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; }
+        .stagger-2 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; }
+        .stagger-3 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
+        .stagger-4 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards; opacity: 0; }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .panel-hidden {
+            display: none;
+            opacity: 0;
+        }
+
+        .panel-visible {
+            display: block;
+            animation: expandPanel 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transform-origin: top;
+        }
+
+        @keyframes expandPanel {
+            from { opacity: 0; transform: scaleY(0.9); height: 0; }
+            to { opacity: 1; transform: scaleY(1); height: auto; }
+        }
+
+        /* Winner Card Special */
+        .winner-card {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            position: relative;
+        }
+        .winner-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+
+        #toast {
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
+            opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); z-index: 50;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="ambient-bg"></div>
+    <div class="blob w-96 h-96 bg-indigo-300 rounded-full top-0 left-0"></div>
+    <div class="blob w-96 h-96 bg-purple-300 rounded-full bottom-0 right-0" style="animation-delay: -12s;"></div>
+
+    <main class="w-full max-w-7xl mx-auto space-y-8 relative z-10">
+        
+        <header class="stagger-1 text-center py-6">
+            <div class="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-sm border border-slate-100 mb-4 transform transition hover:scale-105 hover:rotate-3">
+                <i data-lucide="scan-barcode" class="w-8 h-8 text-indigo-600"></i>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-900 via-indigo-700 to-purple-800 mb-2">
+                Ahorro Inteligente
+            </h1>
+            <p class="text-lg text-slate-500 font-medium mb-6">
+                Compara fácilmente y decide mejor.
+            </p>
+            <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-md rounded-full text-xs font-bold text-indigo-900/60 uppercase tracking-widest border border-indigo-100 shadow-sm">
+                <i data-lucide="check-badge" class="w-4 h-4"></i>
+                By: Sergio Coll Ramírez
+            </div>
+        </header>
+
+        <section id="contenedor-productos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+            
+            <!-- Producto A -->
+            <article class="glass-panel product-card p-6 stagger-2 group" style="--card-color: #6366f1;">
+                <header class="flex items-center gap-4 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg transition-transform group-hover:scale-110 group-hover:rotate-6">1</div>
+                    <h2 class="font-bold text-slate-800 text-lg">Primera Opción</h2>
+                </header>
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Producto o Marca</label>
+                        <div class="input-group">
+                            <i data-lucide="tag" class="icon w-4 h-4"></i>
+                            <input type="text" id="nombreA" placeholder="Ej. Leche Marca X">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Precio Total</label>
+                            <div class="input-group">
+                                <span class="icon font-bold text-slate-400 pl-1">$</span>
+                                <input type="number" id="precioA" placeholder="0" min="0" step="any" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Volumen</label>
+                            <div class="input-group">
+                                <i data-lucide="weight" class="icon w-4 h-4"></i>
+                                <input type="number" id="cantidadA" placeholder="0" min="0" step="any" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Producto B -->
+            <article class="glass-panel product-card p-6 stagger-3 group" style="--card-color: #3b82f6;">
+                <header class="flex items-center gap-4 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg transition-transform group-hover:scale-110 group-hover:-rotate-6">2</div>
+                    <h2 class="font-bold text-slate-800 text-lg">Segunda Opción</h2>
+                </header>
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Producto o Marca</label>
+                        <div class="input-group">
+                            <i data-lucide="tag" class="icon w-4 h-4"></i>
+                            <input type="text" id="nombreB" placeholder="Ej. Leche Marca Y">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Precio Total</label>
+                            <div class="input-group">
+                                <span class="icon font-bold text-slate-400 pl-1">$</span>
+                                <input type="number" id="precioB" placeholder="0" min="0" step="any" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Volumen</label>
+                            <div class="input-group">
+                                <i data-lucide="weight" class="icon w-4 h-4"></i>
+                                <input type="number" id="cantidadB" placeholder="0" min="0" step="any" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Producto C -->
+            <article id="panel-C" class="glass-panel product-card p-6 panel-hidden group" style="--card-color: #10b981;">
+                <button onclick="toggleTercerProducto()" class="absolute top-4 right-4 text-slate-300 hover:text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-colors z-10">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+                <header class="flex items-center gap-4 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg transition-transform group-hover:scale-110 group-hover:rotate-6">3</div>
+                    <h2 class="font-bold text-slate-800 text-lg">Tercera Opción</h2>
+                </header>
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Producto o Marca</label>
+                        <div class="input-group">
+                            <i data-lucide="tag" class="icon w-4 h-4"></i>
+                            <input type="text" id="nombreC" placeholder="Ej. Leche Marca Z">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Precio Total</label>
+                            <div class="input-group">
+                                <span class="icon font-bold text-slate-400 pl-1">$</span>
+                                <input type="number" id="precioC" placeholder="0" min="0" step="any">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Volumen</label>
+                            <div class="input-group">
+                                <i data-lucide="weight" class="icon w-4 h-4"></i>
+                                <input type="number" id="cantidadC" placeholder="0" min="0" step="any">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Producto D -->
+            <article id="panel-D" class="glass-panel product-card p-6 panel-hidden group" style="--card-color: #f43f5e;">
+                <button onclick="toggleCuartoProducto()" class="absolute top-4 right-4 text-slate-300 hover:text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-colors z-10">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+                <header class="flex items-center gap-4 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-lg transition-transform group-hover:scale-110 group-hover:-rotate-6">4</div>
+                    <h2 class="font-bold text-slate-800 text-lg">Cuarta Opción</h2>
+                </header>
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Producto o Marca</label>
+                        <div class="input-group">
+                            <i data-lucide="tag" class="icon w-4 h-4"></i>
+                            <input type="text" id="nombreD" placeholder="Ej. Leche Marca W">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Precio Total</label>
+                            <div class="input-group">
+                                <span class="icon font-bold text-slate-400 pl-1">$</span>
+                                <input type="number" id="precioD" placeholder="0" min="0" step="any">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Volumen</label>
+                            <div class="input-group">
+                                <i data-lucide="weight" class="icon w-4 h-4"></i>
+                                <input type="number" id="cantidadD" placeholder="0" min="0" step="any">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="stagger-4 flex flex-col sm:flex-row items-center justify-between glass-panel p-3 gap-4">
+            <div class="flex flex-wrap justify-center gap-2 w-full sm:w-auto px-3">
+                <button id="btn-add-c" onclick="toggleTercerProducto()" class="flex items-center gap-2 text-[13px] font-bold text-slate-500 hover:text-emerald-600 bg-slate-100 hover:bg-emerald-50 px-4 py-2.5 rounded-xl transition-all duration-300">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Añadir Opción 3
+                </button>
+                <button id="btn-add-d" onclick="toggleCuartoProducto()" class="hidden flex items-center gap-2 text-[13px] font-bold text-slate-500 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 px-4 py-2.5 rounded-xl transition-all duration-300">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Añadir Opción 4
+                </button>
+            </div>
+            <button onclick="ejecutarAnalisis()" class="btn-magic w-full sm:w-auto px-8 py-4 rounded-xl flex items-center justify-center gap-3 font-bold text-[15px] tracking-wide">
+                <i data-lucide="sparkles" class="w-5 h-5"></i> Descubrir Mejor Precio
+            </button>
+        </section>
+
+        <!-- Resultados -->
+        <section id="resultados" class="hidden opacity-0 transition-opacity duration-700 space-y-6 pb-12">
+            
+            <div id="veredicto-container" class="glass-panel p-10 text-center relative overflow-hidden transition-all duration-500 transform scale-95">
+                <div class="relative z-10 flex flex-col items-center">
+                    <div id="icono-veredicto" class="mb-5 p-5 rounded-full bg-white/20 backdrop-blur-md shadow-[0_0_30px_rgba(255,255,255,0.3)] text-white"></div>
+                    <h3 id="veredicto-titulo" class="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-4 drop-shadow-md"></h3>
+                    <p id="veredicto-detalle" class="text-white/90 font-medium text-lg md:text-xl max-w-2xl mx-auto drop-shadow-sm"></p>
+                </div>
+            </div>
+
+            <div class="glass-panel overflow-hidden border-t-4 border-t-indigo-500">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead class="bg-slate-50/80 backdrop-blur-sm border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Producto</th>
+                                <th class="px-6 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Precio Pago</th>
+                                <th class="px-6 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Volumen</th>
+                                <th class="px-6 py-5 text-[11px] font-extrabold text-indigo-600 uppercase tracking-widest text-right bg-indigo-50/50">Costo x Unidad Base</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cuerpo" class="divide-y divide-slate-100/50">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-center">
+                <button onclick="resetApp()" class="flex items-center gap-2 px-8 py-3 bg-white/60 backdrop-blur-md text-slate-700 font-bold rounded-xl border border-slate-200 shadow-sm hover:bg-white hover:text-indigo-600 transition-all duration-300 transform hover:-translate-y-1">
+                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                    Comparar otro producto
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Notificación -->
+    <div id="toast" class="bg-slate-900/90 backdrop-blur-xl text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700">
+        <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400"></i>
+        <span id="toast-msg" class="text-sm font-semibold tracking-wide"></span>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        let isThirdActive = false;
+        let isFourthActive = false;
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        function toggleTercerProducto() {
+            const panelC = document.getElementById('panel-C');
+            const btnAddC = document.getElementById('btn-add-c');
+            const btnAddD = document.getElementById('btn-add-d');
+            
+            isThirdActive = !isThirdActive;
+            
+            if (isThirdActive) {
+                panelC.classList.replace('panel-hidden', 'panel-visible');
+                btnAddC.classList.add('hidden');
+                if (!isFourthActive) btnAddD.classList.remove('hidden');
+            } else {
+                panelC.classList.replace('panel-visible', 'panel-hidden');
+                document.getElementById('nombreC').value = '';
+                document.getElementById('precioC').value = '';
+                document.getElementById('cantidadC').value = '';
+                btnAddC.classList.remove('hidden');
+                btnAddD.classList.add('hidden');
+                if (isFourthActive) toggleCuartoProducto();
+            }
+        }
+
+        function toggleCuartoProducto() {
+            const panelD = document.getElementById('panel-D');
+            const btnAddD = document.getElementById('btn-add-d');
+            
+            isFourthActive = !isFourthActive;
+            
+            if (isFourthActive) {
+                panelD.classList.replace('panel-hidden', 'panel-visible');
+                btnAddD.classList.add('hidden');
+            } else {
+                panelD.classList.replace('panel-visible', 'panel-hidden');
+                document.getElementById('nombreD').value = '';
+                document.getElementById('precioD').value = '';
+                document.getElementById('cantidadD').value = '';
+                btnAddD.classList.remove('hidden');
+            }
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value);
+        }
+
+        function resetApp() {
+            document.getElementById('nombreA').value = '';
+            document.getElementById('precioA').value = '';
+            document.getElementById('cantidadA').value = '';
+
+            document.getElementById('nombreB').value = '';
+            document.getElementById('precioB').value = '';
+            document.getElementById('cantidadB').value = '';
+
+            if (isFourthActive) toggleCuartoProducto();
+            if (isThirdActive) toggleTercerProducto();
+
+            const resultadosDiv = document.getElementById('resultados');
+            resultadosDiv.classList.remove('opacity-100');
+            
+            setTimeout(() => {
+                resultadosDiv.classList.add('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 500);
+        }
+
+        function ejecutarAnalisis() {
+            const getProd = (idSuffix, defaultName) => {
+                const p = parseFloat(document.getElementById(`precio${idSuffix}`).value);
+                const c = parseFloat(document.getElementById(`cantidad${idSuffix}`).value);
+                return {
+                    nombre: document.getElementById(`nombre${idSuffix}`).value.trim() || defaultName,
+                    precio: p,
+                    cantidad: c,
+                    id: idSuffix
+                };
+            };
+
+            const productos = [getProd('A', 'Opción 1'), getProd('B', 'Opción 2')];
+            
+            if (isThirdActive) {
+                const pC = getProd('C', 'Opción 3');
+                if (!isNaN(pC.precio) || !isNaN(pC.cantidad)) productos.push(pC);
+            }
+            if (isFourthActive) {
+                const pD = getProd('D', 'Opción 4');
+                if (!isNaN(pD.precio) || !isNaN(pD.cantidad)) productos.push(pD);
+            }
+
+            const invalidos = productos.filter(p => isNaN(p.precio) || isNaN(p.cantidad) || p.precio <= 0 || p.cantidad <= 0);
+            if (invalidos.length > 0) {
+                showToast("Ingresa valores mayores a cero en los paneles activos.");
+                return;
+            }
+
+            productos.forEach(p => p.precioUnitario = p.precio / p.cantidad);
+            
+            const minPrecio = Math.min(...productos.map(p => p.precioUnitario));
+            const ganadores = productos.filter(p => p.precioUnitario === minPrecio);
+            const ordenados = [...productos].sort((a, b) => a.precioUnitario - b.precioUnitario);
+
+            const resultadosDiv = document.getElementById('resultados');
+            resultadosDiv.classList.remove('hidden');
+            
+            requestAnimationFrame(() => {
+                resultadosDiv.classList.add('opacity-100');
+            });
+
+            const vContainer = document.getElementById('veredicto-container');
+            const titulo = document.getElementById('veredicto-titulo');
+            const detalle = document.getElementById('veredicto-detalle');
+            const icono = document.getElementById('icono-veredicto');
+
+            vContainer.classList.remove('scale-95');
+            vContainer.classList.add('scale-100');
+
+            if (ganadores.length === 1) {
+                vContainer.className = "glass-panel winner-card p-10 text-center relative overflow-hidden transition-all duration-500 transform scale-100 shadow-[0_20px_50px_-10px_rgba(16,185,129,0.4)] border-emerald-400";
+                icono.innerHTML = `<i data-lucide="check-circle" class="w-12 h-12 text-white animate-pulse"></i>`;
+                titulo.innerText = `${ganadores[0].nombre}`;
+                
+                const ahorroUnitario = ordenados[1].precioUnitario - ganadores[0].precioUnitario;
+                const porcentaje = ((ahorroUnitario / ordenados[1].precioUnitario) * 100).toFixed(1);
+                detalle.innerText = `Opción óptima. Ahorras un ${porcentaje}% frente a la alternativa más cercana.`;
+            } else {
+                vContainer.className = "glass-panel p-10 text-center relative overflow-hidden transition-all duration-500 transform scale-100 bg-gradient-to-br from-amber-400 to-orange-500 shadow-[0_20px_50px_-10px_rgba(245,158,11,0.4)] border-amber-300";
+                icono.innerHTML = `<i data-lucide="scale" class="w-12 h-12 text-white"></i>`;
+                titulo.innerText = `Empate Técnico`;
+                
+                const nombres = ganadores.map(g => g.nombre).join(" y ");
+                detalle.innerText = `${nombres} ofrecen idéntico valor matemático por unidad.`;
+            }
+            lucide.createIcons();
+
+            const tablaCuerpo = document.getElementById('tabla-cuerpo');
+            tablaCuerpo.innerHTML = '';
+
+            ordenados.forEach((p, index) => {
+                const esGanador = p.precioUnitario === minPrecio;
+                const fila = document.createElement('tr');
+                fila.className = `transition-colors hover:bg-slate-50/80 ${esGanador ? 'bg-emerald-50/40' : ''}`;
+                fila.style.animation = `slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${index * 0.1}s forwards`;
+                fila.style.opacity = "0";
+                
+                fila.innerHTML = `
+                    <td class="px-6 py-5 flex items-center font-bold ${esGanador ? 'text-emerald-700' : 'text-slate-700'}">
+                        ${esGanador ? '<div class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-4 shadow-[0_0_10px_rgba(16,185,129,0.6)]"></div>' : '<div class="w-2 h-2 rounded-full bg-slate-300 mr-4"></div>'}
+                        ${p.nombre}
+                    </td>
+                    <td class="px-6 py-5 text-right text-slate-600 font-semibold">${formatCurrency(p.precio)}</td>
+                    <td class="px-6 py-5 text-right text-slate-600 font-medium">${p.cantidad.toLocaleString('es-CO')}</td>
+                    <td class="px-6 py-5 text-right font-extrabold ${esGanador ? 'text-emerald-600' : 'text-slate-800'} ${esGanador ? 'bg-emerald-50/50' : 'bg-indigo-50/30'}">
+                        ${formatCurrency(p.precioUnitario)} <span class="text-[10px] font-bold text-slate-400 uppercase ml-1">/u</span>
+                    </td>
+                `;
+                tablaCuerpo.appendChild(fila);
+            });
+
+            setTimeout(() => {
+                resultadosDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+    </script>
+</body>
+</html>
